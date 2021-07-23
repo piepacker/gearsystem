@@ -1,0 +1,43 @@
+name: CD
+
+on:
+  release:
+    types: [created]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build_linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - run: make -C platforms/libretro -j 4
+
+      - name: ZIP Release
+        uses: papeloto/action-zip@v1
+        with:
+          files: platforms/libretro/gearsystem_libretro.so
+          dest: gearsystem_libretro.so.zip
+
+      - name: Get release
+        id: get_release
+        uses: bruceadams/get-release@v1.2.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: gearsystem_libretro.so.zip
+          asset_name: gearsystem-Linux-x86_64.zip
+          asset_content_type: application/zip
+
