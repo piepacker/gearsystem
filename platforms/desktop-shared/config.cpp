@@ -114,6 +114,11 @@ void config_read(void)
     config_emulator.zone = read_int("Emulator", "Zone", 0);
     config_emulator.mapper = read_int("Emulator", "Mapper", 0);
     config_emulator.region = read_int("Emulator", "Region", 0);
+    config_emulator.sms_bootrom = read_bool("Emulator", "SMSBootrom", false);
+    config_emulator.sms_bootrom_path = read_string("Emulator", "SMSBootromPath");
+    config_emulator.gg_bootrom = read_bool("Emulator", "GGBootrom", false);
+    config_emulator.gg_bootrom_path = read_string("Emulator", "GGBootromPath");
+    config_emulator.media = read_int("Emulator", "Media", 0);
 
     for (int i = 0; i < config_max_recent_roms; i++)
     {
@@ -130,6 +135,7 @@ void config_read(void)
     config_video.scanlines = read_bool("Video", "Scanlines", true);
     config_video.scanlines_intensity = read_float("Video", "ScanlinesIntensity", 0.40f);
     config_video.sync = read_bool("Video", "Sync", true);
+    config_video.glasses = read_int("Video", "3DGlasses", 0);
     
     config_audio.enable = read_bool("Audio", "Enable", true);
     config_audio.sync = read_bool("Audio", "Sync", true);
@@ -193,6 +199,11 @@ void config_write(void)
     write_int("Emulator", "Zone", config_emulator.zone);
     write_int("Emulator", "Mapper", config_emulator.mapper);
     write_int("Emulator", "Region", config_emulator.region);
+    write_bool("Emulator", "SMSBootrom", config_emulator.sms_bootrom);
+    write_string("Emulator", "SMSBootromPath", config_emulator.sms_bootrom_path);
+    write_bool("Emulator", "GGBootrom", config_emulator.gg_bootrom);
+    write_string("Emulator", "GGBootromPath", config_emulator.gg_bootrom_path);
+    write_int("Emulator", "Media", config_emulator.media);
 
     for (int i = 0; i < config_max_recent_roms; i++)
     {
@@ -209,6 +220,7 @@ void config_write(void)
     write_bool("Video", "Scanlines", config_video.scanlines);
     write_float("Video", "ScanlinesIntensity", config_video.scanlines_intensity);
     write_bool("Video", "Sync", config_video.sync);
+    write_int("Video", "3DGlasses", config_video.glasses);
 
     write_bool("Audio", "Enable", config_audio.enable);
     write_bool("Audio", "Sync", config_audio.sync);

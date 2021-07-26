@@ -37,9 +37,18 @@ class MSXMemoryRule;
 class MemoryRule;
 class SmsIOPorts;
 class GameGearIOPorts;
+class BootromMemoryRule;
 
 class GearsystemCore
 {
+public:
+    enum GlassesConfig
+    {
+        GlassesBothEyes,
+        GlassesLeftEye,
+        GlassesRightEye
+    };
+
 public:
     GearsystemCore();
     ~GearsystemCore();
@@ -79,6 +88,7 @@ public:
     Processor* GetProcessor();
     Audio* GetAudio();
     Video* GetVideo();
+    void SetGlassesConfig(GlassesConfig config);
 
 private:
     void InitMemoryRules();
@@ -101,9 +111,11 @@ private:
     MSXMemoryRule* m_pMSXMemoryRule;
     SmsIOPorts* m_pSmsIOPorts;
     GameGearIOPorts* m_pGameGearIOPorts;
+    BootromMemoryRule* m_pBootromMemoryRule;
     bool m_bPaused;
     RamChangedCallback m_pRamChangedCallback;
     GS_Color_Format m_pixelFormat;
+    GlassesConfig m_GlassesConfig;
 };
 
 #endif	/* CORE_H */

@@ -84,7 +84,8 @@ void emu_init(const char* save_path)
 
     audio_enabled = true;
     emu_audio_sync = true;
-    emu_debug_disable_breakpoints = false;
+    emu_debug_disable_breakpoints_cpu = false;
+    emu_debug_disable_breakpoints_mem = false;
     emu_debug_tile_palette = 0;
 }
 
@@ -116,7 +117,7 @@ void emu_update(void)
 
         if (!debugging || debug_step || debug_next_frame)
         {
-            bool breakpoints = !emu_debug_disable_breakpoints || IsValidPointer(gearsystem->GetMemory()->GetRunToBreakpoint());
+            bool breakpoints = (!emu_debug_disable_breakpoints_cpu && !emu_debug_disable_breakpoints_mem) || IsValidPointer(gearsystem->GetMemory()->GetRunToBreakpoint());
 
             if (gearsystem->RunToVBlank(emu_frame_buffer, audio_buffer, &sampleCount, debug_step, breakpoints))
             {
@@ -306,6 +307,66 @@ void emu_debug_next_frame(void)
     debugging = debug_next_frame = true;
     debug_step = false;
     gearsystem->Pause(false);
+}
+
+void emu_load_bootrom_sms(const char* file_path)
+{
+    gearsystem->GetMemory()->LoadBootromSMS(file_path);
+}
+
+void emu_load_bootrom_gg(const char* file_path)
+{
+    gearsystem->GetMemory()->LoadBootromGG(file_path);
+}
+
+void emu_enable_bootrom_sms(bool enable)
+{
+    gearsystem->GetMemory()->EnableBootromSMS(enable);
+}
+
+void emu_enable_bootrom_gg(bool enable)
+{
+    gearsystem->GetMemory()->EnableBootromGG(enable);
+}
+
+void emu_set_media_slot(int slot)
+{
+    Memory::MediaSlots media_slot = Memory::CartridgeSlot;
+
+    switch (slot)
+    {
+        case 1:
+            media_slot = Memory::CardSlot;
+            break;
+        case 2:
+            media_slot = Memory::ExpansionSlot;
+            break;
+        case 3:
+            media_slot = Memory::NoSlot;
+            break;
+        default:
+            media_slot = Memory::CartridgeSlot;
+    }
+
+    gearsystem->GetMemory()->SetMediaSlot(media_slot);
+}
+
+void emu_set_3d_glasses_config(int config)
+{
+    GearsystemCore::GlassesConfig glasses = GearsystemCore::GlassesBothEyes;
+
+    switch (config)
+    {
+        case 1:
+            glasses = GearsystemCore::GlassesLeftEye;
+            break;
+        case 2:
+            glasses = GearsystemCore::GlassesRightEye;
+            break;
+        default:
+            glasses = GearsystemCore::GlassesBothEyes;
+    }
+    gearsystem->SetGlassesConfig(glasses);
 }
 
 static void save_ram(void)

@@ -33,6 +33,7 @@
 #include "SG1000MemoryRule.h"
 #include "SmsIOPorts.h"
 #include "GameGearIOPorts.h"
+#include "BootromMemoryRule.h"
 
 GearsystemCore::GearsystemCore()
 {
@@ -50,12 +51,15 @@ GearsystemCore::GearsystemCore()
     InitPointer(m_pMSXMemoryRule);
     InitPointer(m_pSmsIOPorts);
     InitPointer(m_pGameGearIOPorts);
+    InitPointer(m_pBootromMemoryRule);
     m_bPaused = true;
     m_pixelFormat = GS_PIXEL_RGB888;
+    m_GlassesConfig = GearsystemCore::GlassesBothEyes;
 }
 
 GearsystemCore::~GearsystemCore()
 {
+    SafeDelete(m_pBootromMemoryRule);
     SafeDelete(m_pGameGearIOPorts);
     SafeDelete(m_pSmsIOPorts);
     SafeDelete(m_pRomOnlyMemoryRule);
@@ -84,8 +88,8 @@ void GearsystemCore::Init(GS_Color_Format pixelFormat)
     m_pVideo = new Video(m_pMemory, m_pProcessor);
     m_pInput = new Input(m_pProcessor);
     m_pCartridge = new Cartridge();
-    m_pSmsIOPorts = new SmsIOPorts(m_pAudio, m_pVideo, m_pInput, m_pCartridge);
-    m_pGameGearIOPorts = new GameGearIOPorts(m_pAudio, m_pVideo, m_pInput, m_pCartridge);
+    m_pSmsIOPorts = new SmsIOPorts(m_pAudio, m_pVideo, m_pInput, m_pCartridge, m_pMemory);
+    m_pGameGearIOPorts = new GameGearIOPorts(m_pAudio, m_pVideo, m_pInput, m_pCartridge, m_pMemory);
 
     m_pMemory->Init();
     m_pProcessor->Init();
@@ -145,6 +149,7 @@ bool GearsystemCore::LoadROM(const char* szFilePath, Cartridge::ForceConfigurati
         if (IsValidPointer(config))
             m_pCartridge->ForceConfig(*config);
         Reset();
+        m_pMemory->ResetDisassembledMemory();
         m_pMemory->LoadSlotsFromROM(m_pCartridge->GetROM(), m_pCartridge->GetROMSize());
         bool romTypeOK = AddMemoryRules();
 #ifndef GEARSYSTEM_DISABLE_DISASSEMBLER
@@ -168,6 +173,7 @@ bool GearsystemCore::LoadROMFromBuffer(const u8* buffer, int size, Cartridge::Fo
         if (IsValidPointer(config))
             m_pCartridge->ForceConfig(*config);
         Reset();
+        m_pMemory->ResetDisassembledMemory();
         m_pMemory->LoadSlotsFromROM(m_pCartridge->GetROM(), m_pCartridge->GetROMSize());
         bool romTypeOK = AddMemoryRules();
 
@@ -276,6 +282,11 @@ Audio* GearsystemCore::GetAudio()
 Video* GearsystemCore::GetVideo()
 {
     return m_pVideo;
+}
+
+void GearsystemCore::SetGlassesConfig(GlassesConfig config)
+{
+    m_GlassesConfig = config;
 }
 
 void GearsystemCore::KeyPressed(GS_Joypads joypad, GS_Keys key)
@@ -490,6 +501,12 @@ void GearsystemCore::LoadRam(const char* szPath, bool fullPath)
 
 void GearsystemCore::SaveState(int index)
 {
+    if (m_pMemory->GetCurrentSlot() == Memory::BiosSlot)
+    {
+        Log("Save states disabled when running BIOS");
+        return;
+    }
+
     Log("Creating save state %d...", index);
 
     SaveState(NULL, index);
@@ -499,6 +516,12 @@ void GearsystemCore::SaveState(int index)
 
 void GearsystemCore::SaveState(const char* szPath, int index)
 {
+    if (m_pMemory->GetCurrentSlot() == Memory::BiosSlot)
+    {
+        Log("Save states disabled when running BIOS");
+        return;
+    }
+
     Log("Creating save state...");
 
     using namespace std;
@@ -548,6 +571,12 @@ void GearsystemCore::SaveState(const char* szPath, int index)
 
 bool GearsystemCore::SaveState(u8* buffer, size_t& size)
 {
+    if (m_pMemory->GetCurrentSlot() == Memory::BiosSlot)
+    {
+        Log("Save states disabled when running BIOS");
+        return false;
+    }
+
     bool ret = false;
 
     if (m_pCartridge->IsReady() && IsValidPointer(m_pMemory->GetCurrentRule()))
@@ -576,6 +605,12 @@ bool GearsystemCore::SaveState(u8* buffer, size_t& size)
 
 bool GearsystemCore::SaveState(std::ostream& stream, size_t& size)
 {
+    if (m_pMemory->GetCurrentSlot() == Memory::BiosSlot)
+    {
+        Log("Save states disabled when running BIOS");
+        return false;
+    }
+
     if (m_pCartridge->IsReady() && IsValidPointer(m_pMemory->GetCurrentRule()))
     {
         Log("Gathering save state data...");
@@ -611,6 +646,12 @@ bool GearsystemCore::SaveState(std::ostream& stream, size_t& size)
 
 void GearsystemCore::LoadState(int index)
 {
+    if (m_pMemory->GetCurrentSlot() == Memory::BiosSlot)
+    {
+        Log("Save states disabled when running BIOS");
+        return;
+    }
+
     Log("Loading save state %d...", index);
 
     LoadState(NULL, index);
@@ -620,6 +661,12 @@ void GearsystemCore::LoadState(int index)
 
 void GearsystemCore::LoadState(const char* szPath, int index)
 {
+    if (m_pMemory->GetCurrentSlot() == Memory::BiosSlot)
+    {
+        Log("Save states disabled when running BIOS");
+        return;
+    }
+
     Log("Loading save state...");
 
     using namespace std;
@@ -675,6 +722,12 @@ void GearsystemCore::LoadState(const char* szPath, int index)
 
 bool GearsystemCore::LoadState(const u8* buffer, size_t size)
 {
+    if (m_pMemory->GetCurrentSlot() == Memory::BiosSlot)
+    {
+        Log("Save states disabled when running BIOS");
+        return false;
+    }
+
     if (m_pCartridge->IsReady() && IsValidPointer(m_pMemory->GetCurrentRule()) && (size > 0) && IsValidPointer(buffer))
     {
         Log("Gathering load state data [%d bytes]...", size);
@@ -695,6 +748,12 @@ bool GearsystemCore::LoadState(const u8* buffer, size_t size)
 
 bool GearsystemCore::LoadState(std::istream& stream)
 {
+    if (m_pMemory->GetCurrentSlot() == Memory::BiosSlot)
+    {
+        Log("Save states disabled when running BIOS");
+        return false;
+    }
+
     if (m_pCartridge->IsReady() && IsValidPointer(m_pMemory->GetCurrentRule()))
     {
         using namespace std;
@@ -773,14 +832,16 @@ void GearsystemCore::SetRamModificationCallback(RamChangedCallback callback)
 
 void GearsystemCore::InitMemoryRules()
 {
-    m_pSG1000MemoryRule = new SG1000MemoryRule(m_pMemory, m_pCartridge);
-    m_pCodemastersMemoryRule = new CodemastersMemoryRule(m_pMemory, m_pCartridge);
-    m_pSegaMemoryRule = new SegaMemoryRule(m_pMemory, m_pCartridge);
-    m_pRomOnlyMemoryRule = new RomOnlyMemoryRule(m_pMemory, m_pCartridge);
-    m_pKoreanMemoryRule = new KoreanMemoryRule(m_pMemory, m_pCartridge);
-    m_pMSXMemoryRule = new MSXMemoryRule(m_pMemory, m_pCartridge);
+    m_pSG1000MemoryRule = new SG1000MemoryRule(m_pMemory, m_pCartridge, m_pInput);
+    m_pCodemastersMemoryRule = new CodemastersMemoryRule(m_pMemory, m_pCartridge, m_pInput);
+    m_pSegaMemoryRule = new SegaMemoryRule(m_pMemory, m_pCartridge, m_pInput);
+    m_pRomOnlyMemoryRule = new RomOnlyMemoryRule(m_pMemory, m_pCartridge, m_pInput);
+    m_pKoreanMemoryRule = new KoreanMemoryRule(m_pMemory, m_pCartridge, m_pInput);
+    m_pMSXMemoryRule = new MSXMemoryRule(m_pMemory, m_pCartridge, m_pInput);
+    m_pBootromMemoryRule = new BootromMemoryRule(m_pMemory, m_pCartridge, m_pInput);
 
     m_pMemory->SetCurrentRule(m_pRomOnlyMemoryRule);
+    m_pMemory->SetBootromRule(m_pBootromMemoryRule);
     m_pProcessor->SetIOPOrts(m_pSmsIOPorts);
 }
 
@@ -833,7 +894,7 @@ bool GearsystemCore::AddMemoryRules()
 
 void GearsystemCore::Reset()
 {
-    m_pMemory->Reset();
+    m_pMemory->Reset(m_pCartridge->IsGameGear());
     m_pProcessor->Reset();
     m_pAudio->Reset(m_pCartridge->IsPAL());
     m_pVideo->Reset(m_pCartridge->IsGameGear(), m_pCartridge->IsPAL());
@@ -842,6 +903,9 @@ void GearsystemCore::Reset()
     m_pCodemastersMemoryRule->Reset();
     m_pSG1000MemoryRule->Reset();
     m_pRomOnlyMemoryRule->Reset();
+    m_pKoreanMemoryRule->Reset();
+    m_pMSXMemoryRule->Reset();
+    m_pBootromMemoryRule->Reset();
     m_pGameGearIOPorts->Reset();
     m_pSmsIOPorts->Reset();
     m_bPaused = false;
@@ -849,6 +913,16 @@ void GearsystemCore::Reset()
 
 void GearsystemCore::RenderFrameBuffer(u8* finalFrameBuffer)
 {
+    if (m_GlassesConfig != GearsystemCore::GlassesBothEyes)
+    {
+        bool left = IsSetBit(m_pInput->GetGlassesRegistry(), 0);
+
+        if ((m_GlassesConfig == GearsystemCore::GlassesLeftEye) && !left)
+            return;
+        else if ((m_GlassesConfig == GearsystemCore::GlassesRightEye) && left)
+            return;
+    }
+
     int size = GS_RESOLUTION_MAX_WIDTH * GS_RESOLUTION_MAX_HEIGHT;
 
     switch (m_pixelFormat)

@@ -34,7 +34,8 @@ EXTERN u8* emu_debug_tile_buffer;
 EXTERN u8* emu_debug_sprite_buffers[64];
 
 EXTERN bool emu_audio_sync;
-EXTERN bool emu_debug_disable_breakpoints;
+EXTERN bool emu_debug_disable_breakpoints_cpu;
+EXTERN bool emu_debug_disable_breakpoints_mem;
 EXTERN int emu_debug_tile_palette;
 
 EXTERN void emu_init(const char* save_path);
@@ -67,6 +68,12 @@ EXTERN GearsystemCore* emu_get_core(void);
 EXTERN void emu_debug_step(void);
 EXTERN void emu_debug_continue(void);
 EXTERN void emu_debug_next_frame(void);
+EXTERN void emu_load_bootrom_sms(const char* file_path);
+EXTERN void emu_load_bootrom_gg(const char* file_path);
+EXTERN void emu_enable_bootrom_sms(bool enable);
+EXTERN void emu_enable_bootrom_gg(bool enable);
+EXTERN void emu_set_media_slot(int slot);
+EXTERN void emu_set_3d_glasses_config(int config);
 
 #undef EMU_IMPORT
 #undef EXTERN
