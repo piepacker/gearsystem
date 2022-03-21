@@ -634,7 +634,7 @@ void Cartridge::GetInfoFromDB(u32 crc)
     }
 }
 
-void Cartridge::SetGameGenieCheat(const char* szCheat)
+void Cartridge::SetGameGenieCheat(const char* szCheat, bool enabled)
 {
     std::string code(szCheat);
     for (std::string::iterator p = code.begin(); code.end() != p; ++p)
@@ -644,25 +644,40 @@ void Cartridge::SetGameGenieCheat(const char* szCheat)
     {
         u8 new_value = (AsHex(code[0]) << 4 | AsHex(code[1])) & 0xFF;
         u16 cheat_address = (AsHex(code[2]) << 8 | AsHex(code[4]) << 4 | AsHex(code[5]) | (AsHex(code[6]) ^ 0xF) << 12) & 0xFFFF;
-        bool avoid_compare = true;
-        u8 compare_value = 0;
+        int compare_value = -1;
 
         if ((code.length() == 11) && ((code[7] < '0') || ((code[7] > '9') && (code[7] < 'A'))))
         {
             compare_value = (AsHex(code[8]) << 4 | AsHex(code[10])) ^ 0xFF;
             compare_value = ((compare_value >> 2 | compare_value << 6) ^ 0x45) & 0xFF;
-            avoid_compare = false;
         }
 
+        if (!enabled)
+        {
+            // Remove the cheat code
+            for (auto it = m_GameGenieList.begin(); it != m_GameGenieList.end();)
+            {
+                if ((it->address & 0x3FFF) == cheat_address && it->compare_value == compare_value) {
+                    m_pROM[it->address] = it->old_value;
+                    it = m_GameGenieList.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+            return;
+        }
+
+        // Add the cheat code
         for (int bank = 0; bank < GetROMBankCount(); bank++)
         {
             int bank_address = (bank * 0x4000) + (cheat_address & 0x3FFF);
 
-            if (avoid_compare || (m_pROM[bank_address] == compare_value))
+            if (compare_value < 0 || (m_pROM[bank_address] == (u8)compare_value))
             {
                 GameGenieCode undo_data;
                 undo_data.address = bank_address;
                 undo_data.old_value = m_pROM[bank_address];
+                undo_data.compare_value = compare_value;
 
                 m_pROM[bank_address] = new_value;
 

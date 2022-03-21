@@ -81,7 +81,7 @@ public:
     void LoadState(const char* szPath, int index);
     bool LoadState(const u8* buffer, size_t size);
     bool LoadState(std::istream& stream);
-    void SetCheat(const char* szCheat);
+    void SetCheat(const char* szCheat, bool enabled = true);
     void ClearCheats();
     void SetRamModificationCallback(RamChangedCallback callback);
     Memory* GetMemory();

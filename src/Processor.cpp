@@ -654,7 +654,7 @@ void Processor::LoadState(std::istream& stream)
     stream.read(reinterpret_cast<char*> (&m_bInputLastCycle), sizeof(m_bInputLastCycle));
 }
 
-void Processor::SetProActionReplayCheat(const char* szCheat)
+void Processor::SetProActionReplayCheat(const char* szCheat, bool enabled)
 {
     std::string code(szCheat);
     for (std::string::iterator p = code.begin(); code.end() != p; ++p)
@@ -673,7 +673,11 @@ void Processor::SetProActionReplayCheat(const char* szCheat)
         par.value = (AsHex(code[7-offset]) << 4 | AsHex(code[8-offset])) & 0xFF;
         par.address = ((AsHex(code[2]) << 12) | (AsHex(code[3]) << 8) | (AsHex(code[5-offset]) << 4) | AsHex(code[6-offset])) & 0xFFFF;
 
-        m_ProActionReplayList.push_back(par);
+        if (enabled) {
+            m_ProActionReplayList.push_back(par);
+        } else {
+            m_ProActionReplayList.remove(par);
+        }
     }
 }
 

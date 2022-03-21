@@ -93,7 +93,7 @@ public:
     u8* GetROM() const;
     bool LoadFromFile(const char* path);
     bool LoadFromBuffer(const u8* buffer, int size);
-    void SetGameGenieCheat(const char* szCheat);
+    void SetGameGenieCheat(const char* szCheat, bool enabled);
     void ClearGameGenieCheats();
 
 private:
@@ -122,6 +122,7 @@ private:
     {
         int address;
         u8 old_value;
+        int compare_value;
     };
 
     std::list<GameGenieCode> m_GameGenieList;

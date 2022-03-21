@@ -805,18 +805,18 @@ bool GearsystemCore::LoadState(std::istream& stream)
     return false;
 }
 
-void GearsystemCore::SetCheat(const char* szCheat)
+void GearsystemCore::SetCheat(const char* szCheat, bool enabled)
 {
     std::string s = szCheat;
     if ((s.length() == 7) || (s.length() == 11))
     {
-        m_pCartridge->SetGameGenieCheat(szCheat);
+        m_pCartridge->SetGameGenieCheat(szCheat, enabled);
         if (m_pCartridge->IsReady())
             m_pMemory->LoadSlotsFromROM(m_pCartridge->GetROM(), m_pCartridge->GetROMSize());
     }
     else
     {
-        m_pProcessor->SetProActionReplayCheat(szCheat);
+        m_pProcessor->SetProActionReplayCheat(szCheat, enabled);
     }
 }
 

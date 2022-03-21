@@ -66,7 +66,7 @@ public:
     IOPorts* GetIOPOrts();
     void SaveState(std::ostream& stream);
     void LoadState(std::istream& stream);
-    void SetProActionReplayCheat(const char* szCheat);
+    void SetProActionReplayCheat(const char* szCheat, bool enabled = true);
     void ClearProActionReplayCheats();
     ProcessorState* GetState();
     bool Disassemble(u16 address);
@@ -116,6 +116,10 @@ private:
     {
         u16 address;
         u8 value;
+
+        bool operator==(const ProActionReplayCode & rhs) const {
+            return address == rhs.address && value == rhs.value;
+        }
     };
     std::list<ProActionReplayCode> m_ProActionReplayList;
 
