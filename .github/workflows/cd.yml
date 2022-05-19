@@ -17,7 +17,7 @@ jobs:
         with:
           submodules: true
 
-      - run: make -C platforms/libretro -j 4
+      - run: make -C platforms/libretro -j 4 && strip -s platforms/libretro/gearsystem_libretro.so
 
       - name: ZIP Release
         uses: papeloto/action-zip@v1
